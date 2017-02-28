@@ -2005,6 +2005,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
+    milestones[TS_MILESTONE_SERVER_END_WRITE] = Thread::get_hrtime();
     // We are done sending the request header, deallocate
     //  our buffer and then decide what to do next
     free_MIOBuffer(server_entry->write_buffer);
@@ -2069,6 +2070,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
   case VC_EVENT_ERROR:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
+    milestones[TS_MILESTONE_SERVER_END_WRITE] = Thread::get_hrtime();
     handle_server_setup_error(event, data);
     break;
 
@@ -3780,6 +3782,7 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer *c)
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
+    milestones[TS_MILESTONE_SERVER_END_WRITE] = Thread::get_hrtime();
     // If we get this event, it means that the producer
     //  has finished and we wrote the remaining data
     //  to the consumer

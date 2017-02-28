@@ -818,6 +818,13 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "ttms", field);
+  
+  field = new LogField("detail_time_ms", "dtms",
+                           LogField::STRING,
+                           &LogAccess::marshal_detail_time_ms,
+                           (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "dtms", field);
 
   field = new LogField("transfer_time_ms_hex", "ttmh", LogField::sINT, &LogAccess::marshal_transfer_time_ms,
                        &LogAccess::unmarshal_int_to_str_hex);

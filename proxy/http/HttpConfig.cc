@@ -841,6 +841,8 @@ register_stat_callbacks()
                      (int)http_server_connect_end_time_stat, RecRawStatSyncSum);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_begin_write", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_server_begin_write_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_end_write", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_server_end_write_time_stat, RecRawStatSyncSum);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_first_read", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_server_first_read_time_stat, RecRawStatSyncSum);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.server_read_header_done", RECD_COUNTER, RECP_PERSISTENT,

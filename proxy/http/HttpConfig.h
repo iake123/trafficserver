@@ -304,6 +304,7 @@ enum {
   http_server_connect_time_stat,
   http_server_connect_end_time_stat,
   http_server_begin_write_time_stat,
+  http_server_end_write_time_stat,
   http_server_first_read_time_stat,
   http_server_read_header_done_time_stat,
   http_server_close_time_stat,

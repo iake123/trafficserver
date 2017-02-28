@@ -729,6 +729,12 @@ LogAccess::marshal_mem(char *dest, const char *source, int actual_len, int padde
 #endif
 }
 
+int
+LogAccess::marshal_detail_time_ms(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
 /*-------------------------------------------------------------------------
   LogAccess::marshal_ip
 

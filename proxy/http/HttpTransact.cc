@@ -8946,6 +8946,10 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
     HTTP_SUM_DYN_STAT(http_server_begin_write_time_stat,
                       milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
   }
+  if (http_server_end_write_time_stat) {
+    HTTP_SUM_DYN_STAT(http_server_end_write_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_END_WRITE));
+  }
   if (http_server_first_read_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_first_read_time_stat,
                       milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));

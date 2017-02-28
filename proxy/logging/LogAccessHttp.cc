@@ -1408,6 +1408,49 @@ LogAccessHttp::marshal_transfer_time_ms(char *buf)
   return INK_MIN_ALIGN;
 }
 
+/**************************************************************************
+*Ta the time first read data from client after the client connected
+*Tq the time read the head from client
+*Tw the time between begin read the cache and read the full request 
+*Tc the time between begin lookup dns and read the full request 
+*Tcr the time read data from cache
+*Td the time lookup dns
+*Tsc the time connect to the server
+*Tsa the time between write to server and connect end
+*Tst the time write request to the server
+*Tsw the time wait response after write complete
+*Tsr the time read the full head from the server
+*Tcw the time write to the cache
+***************************************************************************/
+
+int
+LogAccessHttp::marshal_detail_time_ms(char *buf)
+{
+    char buffer[256];
+    int len = 0;
+    int roundlen = INK_MIN_ALIGN;
+    if (buf) {
+        int64_t Ta = m_http_sm->milestones.difference_msec(TS_MILESTONE_UA_BEGIN, TS_MILESTONE_UA_FIRST_READ);
+        int64_t Tq = m_http_sm->milestones.difference_msec(TS_MILESTONE_UA_FIRST_READ, TS_MILESTONE_UA_READ_HEADER_DONE);
+        int64_t Tw = m_http_sm->milestones.difference_msec(TS_MILESTONE_UA_READ_HEADER_DONE, TS_MILESTONE_CACHE_OPEN_READ_BEGIN);
+        int64_t Tc = m_http_sm->milestones.difference_msec(TS_MILESTONE_UA_READ_HEADER_DONE, TS_MILESTONE_DNS_LOOKUP_BEGIN);
+        int64_t Tcr = m_http_sm->milestones.difference_msec(TS_MILESTONE_CACHE_OPEN_READ_BEGIN, TS_MILESTONE_CACHE_OPEN_READ_END);
+        int64_t Td = m_http_sm->milestones.difference_msec(TS_MILESTONE_DNS_LOOKUP_BEGIN, TS_MILESTONE_DNS_LOOKUP_END);
+        int64_t Tsc = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_FIRST_CONNECT, TS_MILESTONE_SERVER_CONNECT_END);
+        int64_t Tsa = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT_END, TS_MILESTONE_SERVER_BEGIN_WRITE);
+        int64_t Tst = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_BEGIN_WRITE, TS_MILESTONE_SERVER_END_WRITE);
+        int64_t Tsw = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_END_WRITE, TS_MILESTONE_SERVER_FIRST_READ);
+        int64_t Tsr = m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_FIRST_READ, TS_MILESTONE_SERVER_READ_HEADER_DONE);
+        int64_t Tcw = m_http_sm->milestones.difference_msec(TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN, TS_MILESTONE_CACHE_OPEN_WRITE_END);
+        int64_t Tt = m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH);
+        len = snprintf(buffer,sizeof(buffer), "%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"" \
+                        "/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"/%"PRId64"",Ta,Tq,Tw,Tc,Tcr,Td,Tsc,Tsa,Tst,Tsw,Tsr,Tcw,Tt);
+        roundlen = round_strlen(len + 1);
+        marshal_mem(buf, buffer, len, roundlen);
+    }
+    return roundlen;
+}
+
 int
 LogAccessHttp::marshal_transfer_time_s(char *buf)
 {

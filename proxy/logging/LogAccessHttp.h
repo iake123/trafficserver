@@ -146,6 +146,7 @@ public:
   // other fields
   //
   virtual int marshal_transfer_time_ms(char *);       // INT
+  virtual int marshal_detail_time_ms(char *buf);          //STR
   virtual int marshal_transfer_time_s(char *);        // INT
   virtual int marshal_file_size(char *);              // INT
   virtual int marshal_plugin_identity_id(char *);     // INT
