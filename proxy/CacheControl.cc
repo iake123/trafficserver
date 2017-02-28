@@ -47,7 +47,8 @@ static const char modulePrefix[] = "[CacheControl]";
 
 static const char *CC_directive_str[CC_NUM_TYPES] = {
   "INVALID", "REVALIDATE_AFTER", "NEVER_CACHE", "STANDARD_CACHE", "IGNORE_NO_CACHE", "CLUSTER_CACHE_LOCAL",
-  "IGNORE_CLIENT_NO_CACHE", "IGNORE_SERVER_NO_CACHE", "PIN_IN_CACHE", "TTL_IN_CACHE"
+  "IGNORE_CLIENT_NO_CACHE", "IGNORE_SERVER_NO_CACHE", "PIN_IN_CACHE", 
+  "TTL_IN_CACHE","STD_IN_CACHE"
   // "CACHE_AUTH_CONTENT"
 };
 
@@ -199,8 +200,8 @@ getClusterCacheLocal(URL *url)
 void
 CacheControlResult::Print()
 {
-  printf("\t reval: %d, never-cache: %d, pin: %d, cluster-cache-c: %d ignore-c: %d ignore-s: %d\n", revalidate_after, never_cache,
-         pin_in_cache_for, cluster_cache_local, ignore_client_no_cache, ignore_server_no_cache);
+  printf("\t reval: %d, ttl: %d, std: %d, never-cache: %d, pin: %d, cluster-cache-c: %d ignore-c: %d ignore-s: %d\n", revalidate_after, 
+                    ttl_in_cache, std_in_cache, never_cache, pin_in_cache_for, cluster_cache_local, ignore_client_no_cache, ignore_server_no_cache);
 }
 
 // void CacheControlRecord::Print()
@@ -219,6 +220,9 @@ CacheControlRecord::Print()
     break;
   case CC_TTL_IN_CACHE:
     printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_TTL_IN_CACHE], this->time_arg);
+    break;
+  case CC_STD_IN_CACHE:
+    printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_STD_IN_CACHE], this->time_arg);
     break;
   case CC_CLUSTER_CACHE_LOCAL:
   case CC_IGNORE_CLIENT_NO_CACHE:
@@ -328,6 +332,9 @@ CacheControlRecord::Init(matcher_line *line_info)
       } else if (strcasecmp(label, "ttl-in-cache") == 0) {
         directive = CC_TTL_IN_CACHE;
         d_found   = true;
+      } else if (strcasecmp(label, "std-in-cache") == 0) {
+        directive = CC_STD_IN_CACHE;
+        d_found = true;
       }
       // Process the time argument for the remaining directives
       if (d_found == true) {
@@ -442,6 +449,18 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
       match               = true;
     }
     break;
+  case CC_STD_IN_CACHE:
+  {
+    if (this->CheckForMatch(h_rdata, result->std_line) == true) {
+      result->std_in_cache = time_arg;
+      result->std_line     = this->line_num;
+      // ttl-in-cache overrides never-cache
+      result->never_cache = false;
+      result->never_line  = this->line_num;
+      match               = true;
+    }
+    break;
+  }
   case CC_INVALID:
   case CC_NUM_TYPES:
   default:

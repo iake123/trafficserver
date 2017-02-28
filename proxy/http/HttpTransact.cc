@@ -7352,6 +7352,7 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   ink_time_t current_age, response_date;
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
+  bool cache_head_set = false;
 
   if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
     if (is_stale_cache_response_returnable(s)) {
@@ -7382,7 +7383,12 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   cooked_cc_mask          = cached_obj_response->get_cooked_cc_mask();
   os_specifies_revalidate = cooked_cc_mask & (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE);
   cc_mask                 = MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE;
-
+  
+  /* add for std-in-cache begin */
+  cache_head_set = cooked_cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE);
+  cache_head_set = cache_head_set || cached_obj_response->presence(MIME_PRESENCE_EXPIRES);
+  /* add for std-in-cache end */
+  
   // Check to see if the server forces revalidation
 
   if ((cooked_cc_mask & cc_mask) && s->cache_control.revalidate_after <= 0) {
@@ -7515,7 +7521,14 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
     DebugTxn("http_match", "[..._document_freshness] revalidate_after set, age limit: %d", age_limit);
   }
-
+  //////////////////////////////////////////////////////////////////////
+  //if set std_in_cache, must follow the cache header first                                //
+  //////////////////////////////////////////////////////////////////////
+  if ((false == cache_head_set) && (s->cache_control.std_in_cache >= 0)) {
+    age_limit = s->cache_control.std_in_cache;
+    DebugTxn("http_match", "[..._document_freshness] std_in_cache set, age limit: %d", age_limit);
+  }
+  
   DebugTxn("http_match", "document_freshness --- current_age = %" PRId64, (int64_t)current_age);
   DebugTxn("http_match", "document_freshness --- age_limit   = %d", age_limit);
   DebugTxn("http_match", "document_freshness --- fresh_limit = %d", fresh_limit);
