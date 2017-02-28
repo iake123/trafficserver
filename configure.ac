@@ -766,7 +766,7 @@ AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
 has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
         [
-                optimizing_flags='-O3'
+                optimizing_flags='-O2'
                 AC_MSG_RESULT([yes ${optimizing_flags}])
         ],
         [
