@@ -83,7 +83,9 @@ static const RecordElement RecordsConfig[] =
   ,                             // needed by traffic_cop
   {RECT_CONFIG, "proxy.config.cop.linux_min_memfree_kb", RECD_INT, "0", RECU_DYNAMIC, RR_REQUIRED, RECC_NULL, nullptr, RECA_NULL}
   ,                             // needed by traffic_cop
-  {RECT_CONFIG, "proxy.config.cop.init_sleep_time", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-900]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cop.enable_http_port_test", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cop.init_sleep_time", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, "[0-900]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cop.active_health_checks", RECD_INT, "3", RECU_NULL, RR_NULL, RECC_NULL, "[0-3]", RECA_NULL}
   ,

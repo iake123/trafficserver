@@ -78,6 +78,7 @@ static char server_lockfile[PATH_NAME_MAX];
 
 static int check_memory_min_swapfree_kb = 0;
 static int check_memory_min_memfree_kb  = 0;
+static int enable_http_port_test  = 1;
 
 static int syslog_facility                = LOG_DAEMON;
 static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
@@ -695,6 +696,7 @@ config_reload_records()
 
   config_read_int("proxy.config.cop.linux_min_swapfree_kb", &check_memory_min_swapfree_kb, true);
   config_read_int("proxy.config.cop.linux_min_memfree_kb", &check_memory_min_memfree_kb, true);
+  config_read_int("proxy.config.cop.enable_http_port_test", &enable_http_port_test, true);
 
   cop_log_trace("Leaving %s()\n", __func__);
 }
@@ -1247,6 +1249,11 @@ test_http_port(int port, char *request, int timeout, const char *ip = nullptr, c
 static int
 test_server_http_port()
 {
+  if ( !enable_http_port_test )
+  {
+    return 0;
+  }
+  
   char request[1024] = {'\0'};
 
   // Generate a request for a the 'synthetic.txt' document the manager
