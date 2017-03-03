@@ -382,26 +382,28 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
   bool match               = false;
   HttpRequestData *h_rdata = (HttpRequestData *)rdata;
 
+  if (result->break_match && (result->match_line < this->line_num)) return;
+  
   switch (this->directive) {
   case CC_REVALIDATE_AFTER:
-    if (this->CheckForMatch(h_rdata, result->reval_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->revalidate_after = time_arg;
-      result->reval_line       = this->line_num;
       match                    = true;
     }
     break;
   case CC_NEVER_CACHE:
-    if (this->CheckForMatch(h_rdata, result->never_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->never_cache = true;
-      result->never_line  = this->line_num;
       match               = true;
     }
     break;
   case CC_STANDARD_CACHE:
     // Standard cache just overrides never-cache
-    if (this->CheckForMatch(h_rdata, result->never_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->never_cache = false;
-      result->never_line  = this->line_num;
       match               = true;
     }
     break;
@@ -409,9 +411,9 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
   // We cover both client & server cases for this directive
   //  FALLTHROUGH
   case CC_IGNORE_CLIENT_NO_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ignore_client_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->ignore_client_no_cache = true;
-      result->ignore_client_line     = this->line_num;
       match                          = true;
     }
     if (this->directive != CC_IGNORE_NO_CACHE) {
@@ -419,44 +421,38 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     }
   // FALLTHROUGH
   case CC_IGNORE_SERVER_NO_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ignore_server_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->ignore_server_no_cache = true;
-      result->ignore_server_line     = this->line_num;
       match                          = true;
     }
     break;
   case CC_CLUSTER_CACHE_LOCAL:
-    if (this->CheckForMatch(h_rdata, result->cluster_cache_local_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->cluster_cache_local      = true;
-      result->cluster_cache_local_line = this->line_num;
       match                            = true;
     }
     break;
   case CC_PIN_IN_CACHE:
-    if (this->CheckForMatch(h_rdata, result->pin_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->pin_in_cache_for = time_arg;
-      result->pin_line         = this->line_num;
       match                    = true;
     }
     break;
   case CC_TTL_IN_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ttl_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->ttl_in_cache = time_arg;
-      result->ttl_line     = this->line_num;
-      // ttl-in-cache overrides never-cache
-      result->never_cache = false;
-      result->never_line  = this->line_num;
       match               = true;
     }
     break;
   case CC_STD_IN_CACHE:
   {
-    if (this->CheckForMatch(h_rdata, result->std_line) == true) {
+    if (this->CheckForMatch(h_rdata, result->match_line) == true) {
+      result->Reset();
       result->std_in_cache = time_arg;
-      result->std_line     = this->line_num;
-      // ttl-in-cache overrides never-cache
-      result->never_cache = false;
-      result->never_line  = this->line_num;
       match               = true;
     }
     break;
@@ -476,6 +472,8 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
 
   if (match == true) {
     char crtc_debug[80];
+    result->break_match = true;
+    result->match_line = this->line_num;
     if (result->cache_responses_to_cookies >= 0) {
       snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]", result->cache_responses_to_cookies);
     } else {

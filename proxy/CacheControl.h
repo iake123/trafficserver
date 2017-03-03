@@ -68,6 +68,20 @@ class CacheControlResult
 public:
   inkcoreapi CacheControlResult();
   void Print();
+  inline void Reset() {
+    revalidate_after = CC_UNSET_TIME;
+    pin_in_cache_for = CC_UNSET_TIME;
+    ttl_in_cache = CC_UNSET_TIME;
+    std_in_cache = CC_UNSET_TIME;
+    never_cache = false;
+    cluster_cache_local = false;
+    ignore_client_no_cache = false;
+    ignore_server_no_cache = false;
+    ignore_client_cc_max_age = true;
+    break_match = false;
+    cache_responses_to_cookies = -1;
+    match_line = -1;
+  }
 
   // Data for external use
   //
@@ -82,6 +96,7 @@ public:
   bool ignore_client_no_cache;
   bool ignore_server_no_cache;
   bool ignore_client_cc_max_age;
+  bool break_match;
   int cache_responses_to_cookies; ///< Override for caching cookied responses.
 
   // Data for internal use only
@@ -92,14 +107,7 @@ public:
   //    be overriden by something that appeared
   //    earlier in the the config file
   //
-  int reval_line;
-  int never_line;
-  int pin_line;
-  int ttl_line;
-  int std_line;
-  int cluster_cache_local_line;
-  int ignore_client_line;
-  int ignore_server_line;
+  int match_line;
 };
 
 inline CacheControlResult::CacheControlResult()
@@ -112,15 +120,9 @@ inline CacheControlResult::CacheControlResult()
     ignore_client_no_cache(false),
     ignore_server_no_cache(false),
     ignore_client_cc_max_age(true),
+    break_match(false),
     cache_responses_to_cookies(-1), // do not change value
-    reval_line(-1),
-    never_line(-1),
-    pin_line(-1),
-    ttl_line(-1),
-    std_line(-1),
-    cluster_cache_local_line(-1),
-    ignore_client_line(-1),
-    ignore_server_line(-1)
+    match_line(-1)
 {
 }
 
