@@ -502,6 +502,7 @@ ShowCache::handleCacheDeleteComplete(int event, Event *e)
   } else {
     CHECK_SHOW(show("<td>Delete <font color=red>failed</font></td></tr>\n"));
   }
+  url.destroy();
   return delete_url(event, e);
 }
 
