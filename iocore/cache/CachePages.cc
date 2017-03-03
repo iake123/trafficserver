@@ -147,6 +147,9 @@ struct ShowCache : public ShowCont {
         unescapifyStr(show_cache_urlstrs[i]);
         Debug("cache_inspector", "URL %d: '%s'", i + 1, show_cache_urlstrs[i]);
       }
+    }else {
+        show_cache_urlstrs = new char[1][500];
+        show_cache_urlstrs[0][0] = '\0';
     }
 
     SET_HANDLER(&ShowCache::showMain);
