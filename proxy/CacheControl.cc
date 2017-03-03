@@ -185,7 +185,7 @@ getClusterCacheLocal(URL *url)
   req_hdr.url_set(url);
   rdata.hdr = &req_hdr;
   CacheControlTable->Match(&rdata, &result);
-  req_hdr.clear();
+  req_hdr.destroy();
   return result.cluster_cache_local;
 }
 
