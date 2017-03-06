@@ -285,6 +285,7 @@ public:
   int length_get();
   void clear_string_ref();
   char *string_get(Arena *arena, int *length = NULL);
+  char *string_get_noheap(Arena *arena, int *length = NULL);
   char *string_get_ref(int *length = NULL);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = NULL);
   void hash_get(CryptoHash *md5, cache_generation_t generation = -1) const;
@@ -443,6 +444,13 @@ URL::string_get(Arena *arena_or_null_for_malloc, int *length)
 {
   ink_assert(valid());
   return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap);
+}
+
+inline char *
+URL::string_get_noheap(Arena *arena_or_null_for_malloc, int *length)
+{
+  ink_assert(valid());
+  return url_string_get(m_url_impl, arena_or_null_for_malloc, length, NULL);
 }
 
 inline char *

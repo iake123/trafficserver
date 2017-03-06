@@ -542,6 +542,9 @@ public:
   char *url_string_get(Arena *arena = 0, ///< Arena to use, or @c malloc if NULL.
                        int *length  = 0  ///< Store string length here.
                        );
+
+  char* url_string_get_noheap(Arena* arena, int* length);
+  
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
 

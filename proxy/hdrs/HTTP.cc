@@ -1706,6 +1706,25 @@ HTTPHdr::url_string_get(Arena *arena, int *length)
   return zret;
 }
 
+char*
+HTTPHdr::url_string_get_noheap(Arena* arena, int* length)
+{
+  char* zret = nullptr;
+  UrlPrintHack hack(this);
+
+  if (hack.is_valid()) {
+    // The use of a magic value for Arena to indicate the internal heap is
+    // even uglier but it's less so than duplicating this entire method to
+    // change that one thing.
+
+    zret = (arena == USE_HDR_HEAP_MAGIC)
+      ? m_url_cached.string_get_ref(length)
+      : m_url_cached.string_get_noheap(arena, length)
+      ;
+  }
+  return zret;
+}
+
 int
 HTTPHdr::url_print(char *buff, int length, int *offset, int *skip)
 {
