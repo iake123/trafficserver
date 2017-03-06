@@ -1640,6 +1640,7 @@ class UrlPrintHack
 
       if (0 == hdr->m_url_cached.port_get_raw() && hdr->m_port_in_header) {
         ink_assert(nullptr == ui->m_ptr_port); // shouldn't be set if not in URL.
+        ui->m_port = hdr->m_port;
         ui->m_ptr_port    = m_port_buff;
         ui->m_len_port    = snprintf(m_port_buff, sizeof(m_port_buff), "%d", hdr->m_port);
         m_port_modified_p = true;
@@ -1663,6 +1664,7 @@ class UrlPrintHack
       // about these because, if modified, they were originally NULL and should
       // still be NULL after a re-allocate.
       if (m_port_modified_p) {
+        ui->m_port = 0;
         ui->m_len_port = 0;
         ui->m_ptr_port = nullptr;
       }
