@@ -240,6 +240,11 @@ CacheControlRecord::Print()
   if (cache_responses_to_cookies >= 0) {
     printf("\t\t  - " TWEAK_CACHE_RESPONSES_TO_COOKIES ":%d\n", cache_responses_to_cookies);
   }
+  if (domain) {
+    printf("\t\t%s : %s\n",(type==TYPE_DOMAIN)?"r_domain":"r_host",domain);
+  } else {
+    printf("\t\tr_domain : NULL\n");
+  }
   ControlBase::Print();
 }
 
@@ -260,6 +265,7 @@ CacheControlRecord::Init(matcher_line *line_info)
   char *label;
   char *val;
   bool d_found = false;
+  bool has_domain = false;
 
   this->line_num = line_info->line_num;
 
@@ -281,10 +287,18 @@ CacheControlRecord::Init(matcher_line *line_info)
         cache_responses_to_cookies = v;
       }
       used = true;
+    } else if (strcasecmp(label, "r_domain") == 0) {
+        this->type = TYPE_DOMAIN;
+        this->domain = ats_strdup(val);
+        has_domain = true;
+    } else if (strcasecmp(label, "r_host") == 0) {
+        this->type = TYPE_HOST;
+        this->domain = ats_strdup(val);
+        has_domain = true;
     }
 
     // Clip pair if used.
-    if (used) {
+    if (used || has_domain) {
       line_info->line[0][i] = nullptr;
       --(line_info->num_el);
     }

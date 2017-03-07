@@ -102,6 +102,7 @@
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
 #endif
+#include <vector>
 
 #define SignalError(_buf, _already)                         \
   {                                                         \
@@ -227,6 +228,8 @@ protected:
   int num_el;               // number of elements in the table
   const char *matcher_name; // Used for Debug/Warning/Error messages
   const char *file_name;    // Used for Debug/Warning/Error messages
+  HostLookup *host_lookup;
+  std::vector<int> v_regex;
 };
 
 template <class Data, class MatchResult> class HostRegexMatcher : public RegexMatcher<Data, MatchResult>

@@ -61,6 +61,10 @@ enum CacheControlType {
   CC_NUM_TYPES
 };
 
+enum RegDomainType {
+    TYPE_NONE, TYPE_HOST, TYPE_DOMAIN
+};
+
 struct matcher_line;
 
 class CacheControlResult
@@ -133,12 +137,16 @@ public:
   CacheControlType directive;
   int time_arg;
   int cache_responses_to_cookies;
+  char *domain;
+  int type;
+  int index;
   Result Init(matcher_line *line_info);
   inkcoreapi void UpdateMatch(CacheControlResult *result, RequestData *rdata);
   void Print();
 };
 
-inline CacheControlRecord::CacheControlRecord() : ControlBase(), directive(CC_INVALID), time_arg(0), cache_responses_to_cookies(-1)
+inline CacheControlRecord::CacheControlRecord() : ControlBase(), directive(CC_INVALID), time_arg(0), 
+cache_responses_to_cookies(-1),domain(NULL),type(TYPE_NONE),index(-1)
 {
 }
 

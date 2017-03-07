@@ -383,7 +383,8 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
 //
 template <class Data, class MatchResult>
 RegexMatcher<Data, MatchResult>::RegexMatcher(const char *name, const char *filename)
-  : re_array(nullptr), re_str(nullptr), data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), file_name(filename)
+  : re_array(nullptr), re_str(nullptr), data_array(nullptr), array_len(-1), num_el(-1), matcher_name(name), 
+  file_name(filename),host_lookup(nullptr)
 {
 }
 
@@ -399,6 +400,9 @@ template <class Data, class MatchResult> RegexMatcher<Data, MatchResult>::~Regex
   delete[] re_str;
   ats_free(re_array);
   delete[] data_array;
+  if (host_lookup) {
+    delete host_lookup;
+  }
 }
 
 //
@@ -491,6 +495,155 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   }
 
   return error;
+}
+
+template<> Result RegexMatcher<CacheControlRecord, CacheControlResult>::NewEntry(matcher_line * line_info)
+{
+  CacheControlRecord *cur_d;
+  char *pattern;
+  int erroffset;
+  const char *errptr;
+  Result error = Result::ok();
+
+  // Make sure space has been allocated
+  ink_assert(num_el >= 0);
+  ink_assert(array_len >= 0);
+
+  // Make sure we do not overrun the array;
+  ink_assert(num_el < array_len);
+
+  pattern = line_info->line[1][line_info->dest_entry];
+  // Make sure that the line_info is not bogus
+  ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
+  ink_assert(pattern != nullptr);
+
+  // Create the compiled regular expression
+  re_array[num_el] = pcre_compile(pattern, 0, &errptr, &erroffset, nullptr);
+  if (!re_array[num_el]) {
+    re_array[num_el] = nullptr;
+    return Result::failure("%s regular expression error at line %d position %d : %s",
+                 matcher_name, line_info->line_num, erroffset, errptr);
+  }
+  re_str[num_el] = ats_strdup(pattern);
+
+  // Remove our consumed label from the parsed line
+  line_info->line[0][line_info->dest_entry] = 0;
+  line_info->num_el--;
+
+  // Fill in the parameter info
+  cur_d = data_array + num_el;
+  error = cur_d->Init(line_info);
+
+  if (error.failed()) {
+    ats_free(re_str[num_el]);
+    re_str[num_el] = nullptr;
+    pcre_free(re_array[num_el]);
+    re_array[num_el] = nullptr;
+    return error;
+  }
+
+  if (nullptr == host_lookup && cur_d->domain) {
+    host_lookup = new HostLookup(matcher_name);
+    host_lookup->AllocateSpace(array_len);
+  }
+  
+  if (nullptr != cur_d->domain) {
+    cur_d->index = num_el;
+    host_lookup->NewEntry(cur_d->domain,(cur_d->type == TYPE_DOMAIN) ? true : false, cur_d);
+  } else {
+    v_regex.push_back(num_el);
+  }
+  
+  num_el++;
+
+  return error;
+}
+
+//
+// void RegexMatcher<Data,Result>::Match(RequestData* rdata, Result* result)
+//
+//   Coduncts a linear search through the regex array and
+//     updates arg result for each regex that matches arg URL
+//
+template<> void RegexMatcher<CacheControlRecord, CacheControlResult>::Match(RequestData * rdata, CacheControlResult * result)
+{
+  char *url_str;
+  int r;
+  HostLookupState s;
+  bool rh;
+  int mathed_index = num_el + 1;
+  void *opaque_ptr;
+  CacheControlRecord *data_ptr;
+
+  // Check to see there is any work to before we copy the
+  //   URL
+  if (num_el <= 0) {
+    return;
+  }
+
+  url_str = rdata->get_string();
+  
+  // Can't do a regex match with a NULL string so
+  //  use an empty one instead
+  if (url_str == NULL) {
+    url_str = ats_strdup("");
+  }
+  
+  if (!host_lookup) {
+      // INKqa12980
+      // The function unescapifyStr() is already called in
+      // HttpRequestData::get_string(); therefore, no need to call again here.
+      // unescapifyStr(url_str);
+
+      for (int i = 0; i < num_el; i++) {
+
+        r = pcre_exec(re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
+        if (r > -1) {
+          Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[i].line_num);
+          data_array[i].UpdateMatch(result, rdata);
+          if (result->break_match) break;//match by configure sequence
+        } else if (r < -1) {
+          // An error has occured
+          Warning("Error [%d] matching regex at line %d.", r, data_array[i].line_num);
+        } // else it's -1 which means no match was found.
+
+      }
+  } else {
+    rh = host_lookup->MatchFirst(rdata->get_host(), &s, &opaque_ptr);
+    while (rh == true) {
+        ink_assert(opaque_ptr != nullptr);
+        data_ptr = (CacheControlRecord *) opaque_ptr;
+        if (mathed_index < data_ptr->index) {
+            rh = host_lookup->MatchNext(&s, &opaque_ptr);
+            continue;//match by configure sequence
+        }
+        r = pcre_exec(re_array[data_ptr->index], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
+        if (r > -1) {
+          Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[data_ptr->index].line_num);
+          data_ptr->UpdateMatch(result, rdata);
+          if (result->break_match) mathed_index = data_ptr->index;
+        } else if (r < -1) {
+          // An error has occured
+          Warning("Error [%d] matching regex at line %d.", r, data_array[data_ptr->index].line_num);
+        } // else it's -1 which means no match was found.
+        rh = host_lookup->MatchNext(&s, &opaque_ptr);
+    }
+    if (!v_regex.empty()) {
+        for(std::vector<int>::iterator iter = v_regex.begin();iter != v_regex.end();iter++) {
+            if (mathed_index < *iter) break;//match by configure sequence
+            r = pcre_exec(re_array[*iter], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
+            if (r > -1) {
+              Debug("matcher", "%s Matched %s with regex at line %d", matcher_name, url_str, data_array[*iter].line_num);
+              data_array[*iter].UpdateMatch(result, rdata);
+              if (result->break_match)  break;//match by configure sequence
+            } else if (r < -1) {
+              // An error has occured
+              Warning("Error [%d] matching regex at line %d.", r, data_array[*iter].line_num);
+            } // else it's -1 which means no match was found.
+        }
+    }
+  }
+  ats_free(url_str);
 }
 
 //
