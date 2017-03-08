@@ -660,7 +660,7 @@ Lretry:
   if (thread->mutex == cont->mutex) {
     thread->schedule_in(c, MUTEX_RETRY_DELAY);
   } else {
-    dnsProcessor.thread->schedule_imm(c);
+    thread->schedule_imm(c);
   }
 
   return &c->action;
